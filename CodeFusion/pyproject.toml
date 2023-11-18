@@ -1,0 +1,17 @@
+# pyproject.toml
+
+[tool.poetry]
+name = "VelociVortex"
+version = "0.1.0"
+description = "Your Django Project Description"
+authors = ["Tarun Kumar Dhurwe tarun.dhurwe.19@gmail.com"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+django = "^3.2"
+djangorestframework = "^3.12"
+gunicorn = "^21.2.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
