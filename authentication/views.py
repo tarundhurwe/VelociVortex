@@ -20,7 +20,7 @@ class RegistationView(APIView):
                 if User.objects.filter(username=user_name).exists() or User.objects.filter(email=email).exists():
                     return Response({"error": "User with same email or same username already exists."}, status=status.HTTP_400_BAD_REQUEST)
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_created)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -39,7 +39,7 @@ class LoginView(APIView):
                 refresh_token = RefreshToken.for_user(user)
                 access_token = str(refresh_token.access_token)
 
-                return Response({"access_token": access_token}, status=status.HTTP_200_OK)
+                return Response({"access_token": access_token}, status=status.HTTP_201_CREATED)
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
