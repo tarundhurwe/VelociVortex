@@ -1,4 +1,4 @@
 from django.urls import path
 from .views import UpdateProfile
 
-urlpatterns = [path("", UpdateProfile.post, name="home")]
+urlpatterns = [path("profile", UpdateProfile.as_view(), name="update_description")]
