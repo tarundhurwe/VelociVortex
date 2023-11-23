@@ -111,7 +111,7 @@ class LogoutView(APIView):
     def post(self, request):
         try:
             request.user.auth_token.delete()
-            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
