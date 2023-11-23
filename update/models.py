@@ -20,7 +20,7 @@ class WorkHistory(models.Model):
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
 
-
+    
 class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
