@@ -21,3 +21,24 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
                 raise serializers.ValidationError(f"{field} is a required field")
 
         return data
+
+class UpdateInfoSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'password']
+
+    def update(self, instance, validated_data):
+        # Update user fields
+        instance.email = validated_data.get('email', instance.email)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+
+        # Update password if provided
+        password = validated_data.get('password')
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
