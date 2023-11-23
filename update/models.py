@@ -5,9 +5,12 @@ from django.contrib.auth.models import User
 # Create your models here.
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    profile_picture = models.ImageField(upload_to="images/profile", blank=True, null=True)
+    profile_picture = models.ImageField(
+        upload_to="images/profile", blank=True, null=True
+    )
     description = models.TextField()
     rating = models.IntegerField(default=0, validators=[MaxValueValidator(10)])
+
 
 class WorkHistory(models.Model):
     work_id = models.AutoField(primary_key=True)
@@ -17,6 +20,7 @@ class WorkHistory(models.Model):
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
 
+
 class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -24,6 +28,7 @@ class Project(models.Model):
     description = models.TextField()
     link = models.URLField()
     image = models.ImageField(upload_to="images/projects", blank=True, null=True)
+
 
 class PersonalLink(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
