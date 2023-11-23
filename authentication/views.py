@@ -110,8 +110,16 @@ class LogoutView(APIView):
     
     def post(self, request):
         try:
-            request.user.auth_token.delete()
-            return Response({"message": "Successfully logged out."}, status=status.HTTP_204_NO_CONTENT)
+            refresh_token = request.data.get('refresh_token')
+
+            if not refresh_token:
+                return Response({"error": "Refresh token is required for logout."},
+                    status=status.HTTP_400_BAD_REQUEST)
+            
+            # Blacklisting the refresh token to invalidate it
+            RefreshToken(refresh_token).blacklist()
+            return Response( {"message": "Successfully logged out."},
+                status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
