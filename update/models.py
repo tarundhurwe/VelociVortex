@@ -8,6 +8,7 @@ class UserProfile(models.Model):
     profile_picture = models.ImageField(
         upload_to="images/profile", blank=True, null=True
     )
+    current_title = models.CharField(max_length=255, default="", blank=True, null=True)
     description = models.TextField()
     rating = models.IntegerField(default=0, validators=[MaxValueValidator(10)])
 

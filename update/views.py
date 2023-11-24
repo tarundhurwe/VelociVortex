@@ -14,8 +14,33 @@ class UpdateProfile(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Method to handle the creation of new data for user's description and profile picture.
+        """
         try:
             serializer = UserProfileDetailSerializer(data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def put(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Method to handle the updation of the user's description and profile picture.
+        """
+        try:
+            serializer = UserProfileDetailSerializer(
+                request.user, data=request.data, partial=True
+            )
             if not serializer.is_valid():
                 return Response(
                     {"error": f"{serializer.errors}"},
