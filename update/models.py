@@ -21,7 +21,10 @@ class WorkHistory(models.Model):
     start_date = models.DateField()
     end_date = models.DateField(blank=True, null=True)
 
-    
+    class Meta:
+        verbose_name_plural = "Work History"
+
+
 class Project(models.Model):
     project_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -38,3 +41,12 @@ class PersonalLink(models.Model):
 
     class Meta:
         unique_together = ("user", "link")
+
+
+class Skill(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    skill = models.CharField(max_length=255)
+    level = models.IntegerField(default=0, validators=[MaxValueValidator(10)])
+
+    class Meta:
+        unique_together = ("user", "skill")
