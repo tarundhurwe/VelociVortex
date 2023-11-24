@@ -21,9 +21,8 @@ class UpdateProfile(APIView):
         """
         try:
             user = request.user
-            # adding user id
-            data = {"user": user.id}
-            data.update(request.data)
+            data = request.data
+            data['user'] = user.id
             serializer = UserProfileDetailSerializer(data=data)
             
             if not serializer.is_valid():
