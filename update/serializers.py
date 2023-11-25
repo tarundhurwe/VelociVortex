@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserProfile
+from .models import UserProfile, WorkHistory
 
 
 class UserProfileDetailSerializer(serializers.ModelSerializer):
@@ -7,3 +7,8 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ["user", "profile_picture", "current_title", "description"]
 
+
+class WorkHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkHistory
+        fields = ["user", "company_name", "title", "start_date", "end_date"]
