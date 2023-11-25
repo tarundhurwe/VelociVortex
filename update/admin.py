@@ -10,7 +10,14 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(WorkHistory)
 class WorkHistoryAdmin(admin.ModelAdmin):
-    list_display = ("work_id", "user", "company_name", "start_date", "end_date")
+    list_display = (
+        "work_id",
+        "user",
+        "company_name",
+        "title",
+        "start_date",
+        "end_date",
+    )
     search_fields = ("user__username", "company_name")
 
 

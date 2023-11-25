@@ -23,6 +23,7 @@ class WorkHistory(models.Model):
 
     class Meta:
         verbose_name_plural = "Work History"
+        unique_together = ("user", "start_date", "end_date")
 
 
 class Project(models.Model):
