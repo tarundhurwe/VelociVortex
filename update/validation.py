@@ -25,3 +25,17 @@ class ValidateData:
             return "Please provide valid start and end dates."
         except Exception as e:
             return f"Error: {e}"
+
+    def check_for_present_company(self, work_history_objects: object) -> bool:
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: check whether the employee has only one company's end date as present.
+        """
+        try:
+            present_status_count = 0
+            for work in work_history_objects:
+                if not work.end_date:
+                    present_status_count += 1
+            return present_status_count
+        except Exception as e:
+            return f"Error: {e}"
