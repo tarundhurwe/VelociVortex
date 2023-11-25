@@ -4,7 +4,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import status
 from django.contrib.auth.models import User
-from .serializers import UserProfileDetailSerializer, WorkHistorySerializer
+from .serializers import (
+    UserProfileDetailSerializer,
+    WorkHistorySerializer,
+    UpdateWorkHistorySerializer,
+)
 from .models import UserProfile, WorkHistory
 from .validation import ValidateData
 
@@ -21,9 +25,11 @@ class UpdateProfile(APIView):
         :method description: Method to handle the creation of new data for user's description and profile picture.
         """
         try:
+            # to ensure that the user is able to update their own profiles only
             user = request.user
             data = request.data
             data["user"] = user.id
+
             serializer = UserProfileDetailSerializer(data=data)
 
             if not serializer.is_valid():
@@ -56,15 +62,18 @@ class UpdateProfile(APIView):
             serializer = UserProfileDetailSerializer(
                 user, data=request.data, partial=True
             )
+
             if not serializer.is_valid():
                 return Response(
                     {"error": f"{serializer.errors}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
             serializer.save()
             user_name = request.user.username
             updated_data = {"username": user_name}
             updated_data.update(serializer.data)
+
             return Response(updated_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response(
@@ -76,42 +85,175 @@ class UpdateWorkHistory(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    # add new work history
     def post(self, request):
         """
         @author: Tarun https://github.com/tarundhurwe
         :method description: Api to add new work history to the profile.
         """
         try:
-            validate_instance = ValidateData()
+            validate_data = ValidateData()
             start_date = request.data.get("start_date")
             end_date = request.data.get("end_date")
-            date_validation = validate_instance.verify_start_and_end_dates(
+
+            date_validation = validate_data.verify_start_and_end_dates(
                 start_date, end_date
             )
+            work_history = WorkHistory.objects.filter(user=request.user)
+
+            if (
+                not end_date
+                and validate_data.check_for_present_company(work_history) > 0
+            ):
+                return Response(
+                    {"error": "Only one work history can have end date as present."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             if not isinstance(date_validation, bool):
                 return Response(
                     {"error": date_validation}, status=status.HTTP_400_BAD_REQUEST
                 )
+
             user = request.user
             data = request.data
             data["user"] = user.id
+
             serializer = WorkHistorySerializer(data=data)
+
             if not serializer.is_valid():
                 return Response(
                     {"error": f"{serializer.errors}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
             work = serializer.save()
+
             work_data = serializer.data
             work_data["work_id"] = work.work_id
+
             return Response(work_data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    def put(self):
-        pass
+    # update existing work history
+    def put(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Api to handle the updation of work history.
+        """
+        try:
+            validate_data = ValidateData()
+            work_id = request.data.get("work_id")
+            if not work_id:
+                return Response(
+                    {"error": "Can not update work history without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user = User.objects.get(username=request.user.username)
+            try:
+                work = WorkHistory.objects.get(work_id=work_id, user=user)
+            except WorkHistory.DoesNotExist:
+                return Response(
+                    {"error": "work associated with the user does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            # checks before updates
+            start_date = request.data.get("start_date")
+            end_date = request.data.get("end_date")
+            if start_date and end_date and len(end_date) == 10:
+                date_validation = validate_data.verify_start_and_end_dates(
+                    start_date, end_date
+                )
+                if not isinstance(date_validation, bool):
+                    return Response(
+                        {"error": date_validation}, status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # user should not be allowed to add more than one company as present company
+            elif start_date and end_date == "":
+                work_history = WorkHistory.objects.filter(user=request.user)
+
+                if (
+                    not end_date
+                    and validate_data.check_for_present_company(work_history) > 0
+                ):
+                    return Response(
+                        {
+                            "error": "Only one work history can have end date as present."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            # user should not be allowed to update end date as date before the start date
+            elif not start_date and end_date:
+                start_date = str(work.start_date)
+                date_validation = validate_data.verify_start_and_end_dates(
+                    start_date, end_date
+                )
+                if not isinstance(date_validation, bool):
+                    return Response(
+                        {"error": date_validation}, status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # user should not be allowed to update start date as date date after the end date 
+            elif start_date and not end_date:
+                if work.end_date is not None:
+                    end_date = str(work.end_date)
+                    date_validation = validate_data.verify_start_and_end_dates(
+                        start_date, end_date
+                    )
+                    if not isinstance(date_validation, bool):
+                        return Response(
+                            {"error": date_validation},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+
+            serializer = UpdateWorkHistorySerializer(
+                work, data=request.data, partial=True
+            )
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    # delete work history
+    def delete(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Api to handle deletion of the work history.
+        """
+        try:
+            work_id = request.data.get("work_id")
+            if not work_id:
+                return Response(
+                    {"error": "Can not delete the work history without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                work = WorkHistory.objects.get(work_id=work_id, user=request.user)
+            except WorkHistory.DoesNotExist:
+                return Response(
+                    {"error": "work history does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            work.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class UpdateProject(APIView):
