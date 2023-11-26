@@ -34,6 +34,9 @@ class Project(models.Model):
     link = models.URLField()
     image = models.ImageField(upload_to="images/projects", blank=True, null=True)
 
+    class Meta:
+        unique_together = ("user", "link")
+
 
 class PersonalLink(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
