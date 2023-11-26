@@ -18,7 +18,7 @@ class UpdateWorkHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkHistory
         fields = ["work_id", "user", "company_name", "title", "start_date", "end_date"]
-    
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
