@@ -8,8 +8,10 @@ from .serializers import (
     UserProfileDetailSerializer,
     WorkHistorySerializer,
     UpdateWorkHistorySerializer,
+    ProjectSerializer,
+    UpdateProjectSerializer,
 )
-from .models import UserProfile, WorkHistory
+from .models import UserProfile, WorkHistory, Project
 from .validation import ValidateData
 
 # Create your views here.
@@ -200,7 +202,7 @@ class UpdateWorkHistory(APIView):
                         {"error": date_validation}, status=status.HTTP_400_BAD_REQUEST
                     )
 
-            # user should not be allowed to update start date as date date after the end date 
+            # user should not be allowed to update start date as date date after the end date
             elif start_date and not end_date:
                 if work.end_date is not None:
                     end_date = str(work.end_date)
@@ -261,8 +263,92 @@ class UpdateProject(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Method to handle the addition of new project in the user's profile.
+        """
         try:
-            return Response({"working": f"projects of {request.user.username}"})
+            user = User.objects.get(username=request.user.username)
+            data = request.data
+            data["user"] = user
+
+            serializer = ProjectSerializer(data=data)
+
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            project = serializer.save()
+            project_data = serializer.data
+            project_data["project_id"] = project.project_id
+            return Response(project_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def put(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Method to handle the updation of a project in user's profile.
+        """
+        try:
+            project_id = request.data.get("project_id")
+            if not project_id:
+                return Response(
+                    {"error": "Can not update project without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            data = request.data
+            user = User.objects.get(username=request.user.username)
+            data["user"] = user
+
+            try:
+                project = Project.objects.get(user=user, project_id=project_id)
+            except Project.DoesNotExist:
+                return Response(
+                    {"error": "Project does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            serializer = UpdateProjectSerializer(project, data=data, partial=True)
+
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            project = serializer.save()
+            project_data = serializer.data
+            project_data["project_id"] = project.project_id
+            return Response(project_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def delete(self, request):
+        """
+        @author: Tarun https://github.com/tarundhurwe
+        :method description: Method to handle the deletion of a project in user's profile.
+        """
+        try:
+            project_id = request.data.get("project_id")
+            if not project_id:
+                return Response(
+                    {"error": "Can not update project without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user = User.objects.get(username=request.user.username)
+            try:
+                project = Project.objects.get(project_id=project_id, user=user)
+            except Project.DoesNotExist:
+                return Response(
+                    {"error": "Project does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            project.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
