@@ -20,7 +20,6 @@ class UpdateWorkHistorySerializer(serializers.ModelSerializer):
         fields = ["work_id", "user", "company_name", "title", "start_date", "end_date"]
 
 
-
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
@@ -44,10 +43,12 @@ class UpdatePersonalLinkSerializer(serializers.ModelSerializer):
         model = PersonalLink
         fields = ["link_id", "user", "website", "link"]
 
+
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
         fields = ["user", "skill", "level"]
+
 
 class UpdateSkillSerializer(serializers.ModelSerializer):
     class Meta:
