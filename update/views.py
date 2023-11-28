@@ -10,8 +10,12 @@ from .serializers import (
     UpdateWorkHistorySerializer,
     ProjectSerializer,
     UpdateProjectSerializer,
+    PersonalLinkSerializer,
+    UpdatePersonalLinkSerializer,
+    SkillSerializer,
+    UpdateSkillSerializer
 )
-from .models import UserProfile, WorkHistory, Project
+from .models import UserProfile, WorkHistory, Project, PersonalLink, Skill
 from .validation import ValidateData
 
 # Create your views here.
@@ -361,7 +365,79 @@ class UpdatePersonalLinks(APIView):
 
     def post(self, request):
         try:
-            return Response({"working": f"links of {request.user.username}"})
+            user = User.objects.get(username=request.user.username)
+            data = request.data
+            data["username"] = user
+
+            serializer = PersonalLinkSerializer(data=data)
+
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            link = serializer.save()
+            personal_link_data = serializer.data
+            personal_link_data["link_id"] = link.link_id
+            return Response(personal_link_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def put(self, request):
+        try:
+            link_id = request.data.get("link_id")
+            if not link_id:
+                return Response(
+                    {"error": "Can not update link without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            data = request.data
+            user = User.objects.get(username=request.user.username)
+            data["user"] = user
+            try:
+                link = PersonalLink.objects.get(link_id=link_id, user=user)
+            except PersonalLink.DoesNotExist:
+                return Response(
+                    {"error": "Link does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            serializer = UpdatePersonalLinkSerializer(link, data=data, partial=True)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            link = serializer.save()
+            personal_link_data = serializer.data
+            personal_link_data["link_id"] = link.link_id
+            return Response(personal_link_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def delete(self, request):
+        try:
+            link_id = request.data.get("link_id")
+            if not link_id:
+                return Response(
+                    {"error": "Can not delete link without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user = User.objects.get(username=request.user.username)
+            try:
+                link = PersonalLink.objects.get(link_id=link_id, user=user)
+            except PersonalLink.DoesNotExist:
+                return Response(
+                    {"error": "link does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            
+            link.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -374,7 +450,80 @@ class UpdateSkills(APIView):
 
     def post(self, request):
         try:
-            return Response({"working": f"skills of {request.user.username}"})
+            user = User.objects.get(username=request.user.username)
+            data = request.data
+            data["username"] = user
+            
+            skill = request.data.get("skill")
+            data["skill"] = skill.lower()
+
+            serializer = SkillSerializer(data=data)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            skill = serializer.save()
+            skill_data = serializer.data
+            skill_data["skill_id"] = skill.id
+            return Response(skill_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def put(self, request):
+        try:
+            user = User.objects.get(username=request.user.username)
+            skill_id = request.data.get('skill_id')
+            if not skill_id:
+                return Response(
+                    {"error": "Can not update skill without the id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                user_skill = Skill.objects.get(skill_id=skill_id, user=user)
+            except Skill.DoesNotExist:
+                return Response(
+                    {"error": "skill does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            serializer = UpdateSkillSerializer(user_skill, data=request.data, partial=True)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": f"{serializer.errors}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            skill = serializer.save()
+            skill_data = serializer.data
+            skill_data["skill_id"] = skill.skill_id
+            return Response(skill_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def delete(self, request):
+        try:
+            skill = request.data.get('skill').lower()
+
+            if not skill:
+                return Response(
+                    {"error": "Can not delete skill without the skill name"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user = User.objects.get(username=request.user.username)
+
+            try:
+                skill = Skill.objects.get(skill=skill, user=user)
+            except Skill.DoesNotExist:
+                return Response(
+                    {"error": "skill does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+            
+            skill.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
