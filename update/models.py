@@ -39,6 +39,7 @@ class Project(models.Model):
 
 
 class PersonalLink(models.Model):
+    link_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     website_name = models.CharField(max_length=255)
     link = models.URLField()
@@ -48,6 +49,7 @@ class PersonalLink(models.Model):
 
 
 class Skill(models.Model):
+    skill_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     skill = models.CharField(max_length=255)
     level = models.IntegerField(default=0, validators=[MaxValueValidator(10)])
